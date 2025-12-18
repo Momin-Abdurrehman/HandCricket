@@ -17,14 +17,33 @@ class AdaptiveAgent:
     - Layer 3: Strategic Decision Making
     """
     
-    def __init__(self, use_all_layers: bool = True):
+    def __init__(self, use_all_layers: bool = True, difficulty: str = 'balanced'):
         """
         Initialize the adaptive agent
         
         Args:
             use_all_layers: If True, use all three layers. If False, use random strategy.
+            difficulty: AI difficulty level - 'easy', 'balanced', or 'hard'
+                       easy: More random, less accurate predictions
+                       balanced: Default, fair gameplay
+                       hard: More accurate predictions, smarter decisions
         """
         self.use_all_layers = use_all_layers
+        self.difficulty = difficulty
+        
+        # Set difficulty parameters
+        if difficulty == 'easy':
+            self.randomness = 0.25  # 25% random moves
+            self.learning_speed = 40  # Slower learning
+            self.pattern_weight = 0.60  # Less pattern reliance
+        elif difficulty == 'hard':
+            self.randomness = 0.03  # 3% random moves
+            self.learning_speed = 20  # Faster learning
+            self.pattern_weight = 0.92  # High pattern reliance
+        else:  # balanced
+            self.randomness = 0.10  # 10% random moves
+            self.learning_speed = 30  # Moderate learning
+            self.pattern_weight = 0.82  # Balanced pattern reliance
         
         # Layer 1: Pattern Mining
         self.ngram_model = NGramModel(n=3)
@@ -61,8 +80,9 @@ class AdaptiveAgent:
         Returns:
             Chosen move (1-6)
         """
-        if not self.use_all_layers or len(player_history) < 5:
+        if not self.use_all_layers or len(player_history) < 3:
             # Not enough data or random mode - use simple strategy
+            # Reduced threshold from 5 to 3 to start learning earlier
             return self._random_move()
         
         # Layer 1: Get predictions from pattern mining
@@ -74,9 +94,17 @@ class AdaptiveAgent:
         self.confidence_scores.append(float(np.max(prob_dist)))
         
         # Layer 3: Use Monte Carlo to choose best move
-        move = self.monte_carlo.adaptive_strategy(
-            prob_dist, is_batting, current_score, opponent_score, innings
-        )
+        # Add occasional randomness to prevent being too predictable
+        if np.random.random() < self.randomness:
+            # Occasionally make a random but reasonable move
+            # Weighted towards safer moves (avoid extreme choices early)
+            weights = 1.0 - prob_dist  # Inverse of predicted probabilities
+            weights = weights / weights.sum()
+            move = np.random.choice(range(1, 7), p=weights)
+        else:
+            move = self.monte_carlo.adaptive_strategy(
+                prob_dist, is_batting, current_score, opponent_score, innings
+            )
         
         return move
     
@@ -104,20 +132,34 @@ class AdaptiveAgent:
         features = self.online_lr.extract_features(player_history)
         lr_probs = self.online_lr.predict_probabilities(features)
         
-        # Weighted combination of all predictions
-        # Give more weight to recent and learning-based methods
+        # Adaptive weighting based on game progress
+        # Early game: less accurate predictions (more random)
+        # Late game: more accurate predictions (learned patterns)
+        history_length = len(player_history)
+        learning_factor = min(1.0, history_length / self.learning_speed)  # Adaptive learning speed
+        
+        # Base uniform distribution for randomness
+        uniform_probs = np.ones(6) / 6.0
+        
+        # Weighted combination with adaptive learning
         combined = (
-            0.20 * ngram_probs +      # N-gram patterns
-            0.15 * window_probs +      # Frequency in window
-            0.20 * ema_probs +         # Exponential moving average
-            0.15 * pattern_probs +     # Sequential patterns
-            0.15 * ftrl_probs +        # FTRL learning
-            0.10 * ucb1_probs +        # UCB1 exploration
-            0.05 * lr_probs            # Logistic regression
+            0.18 * ngram_probs +      # N-gram patterns (reduced from 0.20)
+            0.12 * window_probs +      # Frequency in window (reduced from 0.15)
+            0.15 * ema_probs +         # Exponential moving average (reduced from 0.20)
+            0.12 * pattern_probs +     # Sequential patterns (reduced from 0.15)
+            0.13 * ftrl_probs +        # FTRL learning (reduced from 0.15)
+            0.08 * ucb1_probs +        # UCB1 exploration (reduced from 0.10)
+            0.04 * lr_probs +          # Logistic regression (reduced from 0.05)
+            0.18 * uniform_probs       # Random component for unpredictability
         )
         
+        # Blend with uniform distribution based on learning progress
+        # Early: more random, Late: more pattern-based
+        blended = (learning_factor * self.pattern_weight) * combined + \
+                  (1 - learning_factor * self.pattern_weight) * uniform_probs
+        
         # Normalize
-        return combined / combined.sum()
+        return blended / blended.sum()
     
     def update(self, player_move: int, was_out: bool):
         """

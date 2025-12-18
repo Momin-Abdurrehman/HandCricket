@@ -21,9 +21,25 @@ That's it! You're ready to go.
 
 ## Usage
 
-### Play Interactively
+### Play with GUI (Recommended)
 
-Play a game against the AI:
+Launch the graphical interface:
+
+```bash
+python main.py gui
+```
+
+**Features:**
+- Beautiful Tkinter interface with dark theme
+- Click buttons to choose your move (1-6)
+- Live scoreboard and game state display
+- Real-time AI prediction statistics
+- Game log showing all moves and outcomes
+- Easy match restart
+
+### Play Interactively (CLI)
+
+Play a text-based game against the AI:
 
 ```bash
 python main.py play

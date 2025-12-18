@@ -229,6 +229,33 @@ def benchmark_strategies():
         print(f"  Average Score: {summary['ai_avg_score']:.1f}")
 
 
+def run_gui_mode():
+    """Launch the GUI interface"""
+    try:
+        from src.ui import run as run_gui
+        run_gui()
+    except ImportError as e:
+        if 'tkinter' in str(e).lower() or '_tkinter' in str(e).lower():
+            print("=" * 60)
+            print("GUI Error: Tkinter is not available")
+            print("=" * 60)
+            print("\nTkinter is required for the GUI but is not installed in your")
+            print("Python environment.")
+            print("\nTo fix this on macOS:")
+            print("  1. If using system Python: Install python-tk")
+            print("     brew install python-tk")
+            print("  2. If using pyenv: Reinstall Python with tkinter support")
+            print("     pyenv uninstall 3.x.x")
+            print("     pyenv install 3.x.x")
+            print("  3. Or use the CLI mode instead:")
+            print("     python main.py play")
+            print("\nAlternatively, you can run the GUI directly if Tkinter is available:")
+            print("     python src/ui/gui.py")
+            sys.exit(1)
+        else:
+            rai_modese
+
+
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
@@ -237,8 +264,8 @@ def main():
     
     parser.add_argument(
         'mode',
-        choices=['play', 'simulate', 'benchmark'],
-        help='Mode: play (interactive), simulate (automated), benchmark (compare strategies)'
+        choices=['play', 'simulate', 'benchmark', 'gui'],
+        help='Mode: play (interactive CLI), gui (graphical interface), simulate (automated), benchmark (compare strategies)'
     )
     
     parser.add_argument(
@@ -252,6 +279,8 @@ def main():
     
     if args.mode == 'play':
         play_interactive_game()
+    elif args.mode == 'gui':
+        run_gui_mode()
     elif args.mode == 'simulate':
         run_simulation(args.matches)
     elif args.mode == 'benchmark':

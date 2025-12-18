@@ -92,10 +92,12 @@ class MonteCarloSimulator:
             # Higher expected runs is good, lower risk is good
             if is_batting:
                 # When batting: prioritize runs but avoid getting out
-                utility = expected_runs - (risk * 10)  # Penalty for risk
+                # Reduced penalty to make AI less overly cautious
+                utility = expected_runs - (risk * 6)  # Penalty for risk (reduced from 10)
             else:
                 # When bowling: prioritize getting the batsman out
-                utility = (risk * 5) + expected_runs  # Reward risk of opponent getting out
+                # Reduced reward to avoid being too aggressive
+                utility = (risk * 3) + expected_runs  # Reward risk of opponent getting out (reduced from 5)
             
             evaluations.append({
                 'move': move,
@@ -161,10 +163,10 @@ class MonteCarloSimulator:
             Strategically chosen move
         """
         if innings == 1:
-            # First innings: balanced approach
+            # First innings: balanced approach with moderate risk
             return self.choose_best_move(
                 opponent_prob_dist, is_batting, current_score, opponent_score,
-                risk_tolerance=0.25
+                risk_tolerance=0.30  # Slightly increased from 0.25
             )
         else:
             # Second innings: adapt based on target
@@ -175,22 +177,37 @@ class MonteCarloSimulator:
                 if runs_needed <= 0:
                     # Already won, play safe
                     return self.choose_safe_move(opponent_prob_dist)
-                elif runs_needed <= 5:
-                    # Close to target, play safe
-                    return self.choose_safe_move(opponent_prob_dist)
+                elif runs_needed <= 3:
+                    # Very close to target, balanced play
+                    return self.choose_best_move(
+                        opponent_prob_dist, is_batting, current_score, opponent_score,
+                        risk_tolerance=0.35
+                    )
+                elif runs_needed <= 10:
+                    # Moderate pressure, slightly aggressive
+                    return self.choose_best_move(
+                        opponent_prob_dist, is_batting, current_score, opponent_score,
+                        risk_tolerance=0.25
+                    )
                 else:
-                    # Need more runs, play aggressively
+                    # Need more runs, more aggressive
                     return self.choose_aggressive_move(opponent_prob_dist, is_batting)
             else:
                 # Bowling in second innings: defend the score
                 runs_ahead = current_score - opponent_score
                 
-                if runs_ahead <= 5:
-                    # Close game, try to get them out
+                if runs_ahead <= 3:
+                    # Very close game, aggressive bowling
                     return self.choose_aggressive_move(opponent_prob_dist, is_batting)
-                else:
-                    # Comfortable lead, balanced approach
+                elif runs_ahead <= 10:
+                    # Moderate lead, balanced approach
                     return self.choose_best_move(
                         opponent_prob_dist, is_batting, current_score, opponent_score,
-                        risk_tolerance=0.3
+                        risk_tolerance=0.35
+                    )
+                else:
+                    # Comfortable lead, more conservative
+                    return self.choose_best_move(
+                        opponent_prob_dist, is_batting, current_score, opponent_score,
+                        risk_tolerance=0.40
                     )

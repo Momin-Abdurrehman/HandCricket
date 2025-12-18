@@ -43,7 +43,7 @@ The agent behaves more like a human opponent, providing a challenging and engagi
 ### Core Game Features
 - Complete Hand Cricket game implementation
 - Toss system and innings management
-- Interactive CLI interface
+- Interactive CLI and GUI interfaces
 - Comprehensive statistics tracking
 - Match history and replay capabilities
 
@@ -52,6 +52,8 @@ The agent behaves more like a human opponent, providing a challenging and engagi
 - **Online Learning**: Updates predictions in real-time
 - **Strategic Decision Making**: Evaluates risk vs reward for each move
 - **Adaptive Behavior**: Adjusts strategy based on game situation
+- **Difficulty Levels**: Choose from Easy, Balanced, or Hard modes
+- **Progressive Learning**: Starts weaker, gets smarter as game progresses
 
 ### Analysis & Visualization
 - Prediction accuracy tracking
@@ -92,6 +94,7 @@ Makes optimal decisions using:
 ### Prerequisites
 - Python 3.10 or higher
 - pip package manager
+- Tkinter (for GUI mode, usually pre-installed with Python)
 
 ### Setup
 
@@ -110,6 +113,11 @@ pip install -r requirements.txt
 ```bash
 python -m pytest tests/
 ```
+
+**Note:** If you encounter Tkinter errors when running the GUI:
+- **macOS**: `brew install python-tk@3.10` (replace version as needed)
+- **Ubuntu/Debian**: `sudo apt-get install python3-tk`
+- **Windows**: Tkinter is usually pre-installed with Python
 
 ---
 
